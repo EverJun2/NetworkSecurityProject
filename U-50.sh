@@ -66,18 +66,22 @@ else
 fi
 
 log "------------- Detect Result -------------"
-log "$BOLD[RESULT]$RESET PASS_MAX_DAYS activation: $DUEDATE_ACTIVE"
+log "$BOLD[RESULT]$ Account Group assesment : $DETECT_STATUS"
 log "------------------------------------"
 
 # 불필요한 계정이 있을 경우, 해당 계정을 root 그룹에서 삭제
 if [ "$DETECT_STATUS" == "FAIL" ]; then
     backup "$FILE_ACCOUNT"
-    
-    # root 그룹에서 불필요한 계정을 제거
     for ACCOUNT in $UNNECESSARY_ACCOUNTS; do
-        log "$BOLD[INFO]$RESET Removing account '$ACCOUNT' from root group..."
-        sed -i "s/\b$ACCOUNT\b//g" "$FILE_ACCOUNT"
+    log "$BOLD[INFO]$RESET Removing account '$ACCOUNT' from root group..."
+
+    sed -i -E "s/(^root:[^:]*:0:[^,]*)\b,$ACCOUNT\b/\1/g" "$FILE_ACCOUNT"
+    sed -i -E "s/(^root:[^:]*:0:[^,]*)\b$ACCOUNT,/\1/g" "$FILE_ACCOUNT"
+    sed -i -E "s/(^root:[^:]*:0:[^,]*)\b$ACCOUNT\b/\1/g" "$FILE_ACCOUNT"
     done
+    
+    sed -i -E 's/,+/,/g; s/,$//' "$FILE_ACCOUNT"
+
 
     # 수정 후 점검
     if grep "^root:" "$FILE_ACCOUNT" | grep -qv ",.*$"; then
