@@ -66,7 +66,12 @@ else
 fi
 
 log "------------- Detect Result -------------"
-log "$BOLD[RESULT]$ Account Group assesment : $DETECT_STATUS"
+if [ "$DETECT_STATUS" == "FAIL" ]; then
+    log "$BOLD[RESULT]$RESET Account Group assesment : ${RED}$DETECT_STATUS$RESET"
+else
+    log "$BOLD[RESULT]$RESET Account Group assesment : ${GREEN}$DETECT_STATUS$RESET"
+fi
+
 log "------------------------------------"
 
 # 불필요한 계정이 있을 경우, 해당 계정을 root 그룹에서 삭제
@@ -84,11 +89,11 @@ if [ "$DETECT_STATUS" == "FAIL" ]; then
 
 
     # 수정 후 점검
-    if grep "^root:" "$FILE_ACCOUNT" | grep -qv ",.*$"; then
-        log "$BOLD[INFO]$RESET Unnecessary accounts removed successfully."
+    if grep -q '^root:x:0:root$' "$FILE_ACCOUNT"; then
+        log "$BOLD[INFO]$RESET ${GREEN}Unnecessary accounts removed successfully.$RESET"
         REMEDIATE_STATUS="PASS"
     else
-        log "$BOLD[ERROR]$RESET Failed to remove unnecessary accounts."
+        log "$BOLD${RED}[ERROR]$RESET ${RED}Failed to remove unnecessary accounts.$RESET"
         REMEDIATE_STATUS="FAIL"
     fi
 else
@@ -100,28 +105,27 @@ cat > "$JSON" <<EOF
   "date": "$TS",
   "control_family": "U-50",
   "check_target": "Only minimal accounts should be included in the administrator group.",
-  "discussion": "Good: If no unnecessary accounts are registered in the administrator group. \nVulnerable: If unnecessary accounts are registered in the administrator group."
-
-
-  "check_content": "[/etc/group] do only include root account. Do not include other accounts. ",
-  "fix_text": "Step 1) Use vi editor and open [/etc/group] . Step 2) Delete other accounts exclude root.",
+  "discussion": "Good: If no unnecessary accounts are registered in the administrator group. \\nVulnerable: If unnecessary accounts are registered in the administrator group.",
+  "check_content": "[/etc/group] do only include root account. Do not include other accounts.",
+  "fix_text": "Step 1) Use vi editor and open [/etc/group]. Step 2) Delete other accounts exclude root.",
   "payload": {
     "severity": "medium",
     "port": "",
     "service": "",
     "protocol": "",
-    "threat": ["Account information leakage", "Configuration file and directory tampering", "etc."]
+    "threat": ["Account information leakage", "Configuration file and directory tampering", "etc."],
     "TTP": "",
     "files_checked": ["$FILE_ACCOUNT"]
   },
   "results": [
     {
       "phase": "detect",
-      "status": "$DETECT_STATUS",
+      "status": "$DETECT_STATUS"
+      "UNNECESSARY_ACCOUNTS": "$UNNECESSARY_ACCOUNTS"
     },
     {
       "phase": "remediate",
-      "status": "$REMEDIATE_STATUS",
+      "status": "$REMEDIATE_STATUS"
     }
   ]
 }
